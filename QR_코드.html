@@ -11,12 +11,17 @@ button{margin-top:10px;padding:12px 20px;border:0;border-radius:10px;background:
 </style></head><body>
 <h2>예약 QR코드 만들기</h2>
 <p class="hint">GitHub Pages 주소를 붙여넣고 만들기를 누르세요.<br>(예: https://아이디.github.io/저장소이름/)</p>
-<input id="u" placeholder="https://아이디.github.io/저장소이름/">
-<button onclick="mk()">QR 만들기</button> <button onclick="print()">인쇄</button>
+<input id="u" placeholder="https://github.com/koalla-glitch/sangdang.git">
+<button onclick="mk()">QR 만들기</button> <button onclick="save()">이미지로 저장</button> <button onclick="print()">인쇄</button>
 <div id="q"></div><div id="t"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 function mk(){const u=document.getElementById("u").value.trim();if(!u)return;
 const q=document.getElementById("q");q.innerHTML="";new QRCode(q,{text:u,width:240,height:240,correctLevel:QRCode.CorrectLevel.M});
 document.getElementById("t").textContent="📱 스캔해서 진료 예약하기"}
+function save(){const c=document.querySelector("#q canvas");if(!c)return alert("먼저 QR 만들기를 눌러 주세요.");
+const m=24,o=document.createElement("canvas");o.width=c.width+m*2;o.height=c.height+m*2+40;
+const g=o.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,o.width,o.height);g.drawImage(c,m,m);
+g.fillStyle="#000";g.font="bold 18px sans-serif";g.textAlign="center";g.fillText("스캔해서 진료 예약하기",o.width/2,c.height+m+34);
+const a=document.createElement("a");a.download="예약QR.png";a.href=o.toDataURL("image/png");a.click()}
 </script></body></html>
