@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>예약 QR코드 만들기</title>
+<style>
+body{font:16px/1.6 -apple-system,"Noto Sans KR","Malgun Gothic",sans-serif;max-width:420px;margin:0 auto;padding:20px;text-align:center}
+input{width:100%;padding:12px;border:1px solid #ccd;border-radius:10px;font:inherit}
+button{margin-top:10px;padding:12px 20px;border:0;border-radius:10px;background:#1c7ed6;color:#fff;font:inherit;font-weight:700;cursor:pointer}
+#q{display:flex;justify-content:center;margin:24px 0}#t{font-size:22px;font-weight:700}
+@media print{input,button,.hint{display:none}}
+</style></head><body>
+<h2>예약 QR코드 만들기</h2>
+<p class="hint">GitHub Pages 주소를 붙여넣고 만들기를 누르세요.<br>(예: https://아이디.github.io/저장소이름/)</p>
+<input id="u" placeholder="https://아이디.github.io/저장소이름/">
+<button onclick="mk()">QR 만들기</button> <button onclick="print()">인쇄</button>
+<div id="q"></div><div id="t"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+function mk(){const u=document.getElementById("u").value.trim();if(!u)return;
+const q=document.getElementById("q");q.innerHTML="";new QRCode(q,{text:u,width:240,height:240,correctLevel:QRCode.CorrectLevel.M});
+document.getElementById("t").textContent="📱 스캔해서 진료 예약하기"}
+</script></body></html>

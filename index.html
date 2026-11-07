@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>상당이비인후과 진료 예약</title>
+<style>
+:root{--bg:#f4f8fb;--card:#fff;--tx:#1d2b36;--mut:#66788a;--pr:#1c7ed6;--ln:#d9e3ec;--dis:#eef2f5}
+@media(prefers-color-scheme:dark){:root{--bg:#10171d;--card:#18222b;--tx:#e8eef3;--mut:#9aabb8;--pr:#4dabf7;--ln:#2a3945;--dis:#1f2b35}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.6 -apple-system,"Noto Sans KR","Malgun Gothic",sans-serif}
+main{max-width:520px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:16px;padding:20px;margin-bottom:14px}
+h1{font-size:24px;margin:0 0 4px}h2{font-size:17px;margin:0 0 12px}
+.mut{color:var(--mut);font-size:14px}.info{margin-top:12px;font-size:14px;line-height:1.9}
+a{color:var(--pr)}
+.row{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px}
+.chip{flex:0 0 auto;min-width:62px;padding:10px 6px;border:1px solid var(--ln);border-radius:12px;background:var(--card);color:var(--tx);text-align:center;font:inherit;cursor:pointer}
+.chip small{display:block;color:var(--mut)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.chip.on{background:var(--pr);border-color:var(--pr);color:#fff}.chip.on small{color:#fff}
+.chip:disabled{background:var(--dis);color:var(--mut);text-decoration:line-through;cursor:not-allowed}
+label{display:block;font-size:14px;margin:12px 0 4px}
+input[type=text],input[type=tel]{width:100%;padding:12px;border:1px solid var(--ln);border-radius:10px;background:var(--bg);color:var(--tx);font:inherit}
+.agree{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--mut);margin-top:14px}
+.btn{width:100%;margin-top:16px;padding:15px;border:0;border-radius:12px;background:var(--pr);color:#fff;font:inherit;font-weight:700;cursor:pointer}
+.btn:disabled{opacity:.5}
+.done{text-align:center}.done .big{font-size:22px;font-weight:700;margin:8px 0}
+.demo{background:#fff3bf;color:#5c4a00;padding:8px 12px;border-radius:10px;font-size:13px;margin-bottom:12px}
+</style></head><body><main>
+<div id="demo"></div>
+<section class="card"><h1 id="hn"></h1><div class="mut" id="hi"></div><div class="info" id="hx"></div></section>
+<div id="app">
+<section class="card"><h2>① 날짜 선택</h2><div class="row" id="dates"></div></section>
+<section class="card"><h2>② 시간 선택</h2><div id="times" class="mut">날짜를 먼저 선택해 주세요.</div></section>
+<section class="card"><h2>③ 예약자 정보</h2>
+<label for="nm">이름</label><input id="nm" type="text" maxlength="20" autocomplete="name">
+<label for="ph">연락처</label><input id="ph" type="tel" maxlength="13" inputmode="tel" placeholder="010-0000-0000" autocomplete="tel">
+<label class="agree"><input id="ag" type="checkbox"><span>예약 확인·변경 연락 목적으로 이름과 연락처를 수집하며, 예약 시간이 지나면 삭제됩니다. 이에 동의합니다.</span></label>
+<button class="btn" id="go">예약하기</button></section>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// ===== 여기만 수정하세요 =====
+const C={name:"상당이비인후과",intro:"귀·코·목 질환을 정성껏 진료하는 이비인후과입니다. 진료과목: 이비인후과",
+ phone:"043-298-8007",addr:"충북 청주시 상당구 중고개로 181 대상코스모빌딩 2층",hours:"월·화·목·금 09:00–18:00 · 수 09:00–12:30 · 토·일·공휴일 휴진",
+ // 요일별 진료시간 (0=일 … 6=토). 목록에 없는 요일은 휴진. 수요일은 오전만 진료
+ open:{1:["09:00","18:00"],2:["09:00","18:00"],3:["09:00","12:30"],4:["09:00","18:00"],5:["09:00","18:00"]},
+ step:30,lunch:["12:30","14:00"],days:60,
+ // 공휴일·대체공휴일 (매년 확인해서 추가하세요)
+ holidays:["2026-12-25","2027-01-01","2027-02-06","2027-02-07","2027-02-08","2027-02-09","2027-03-01","2027-05-05","2027-05-13"],
+ // 직접 지정하는 휴진일 예: ["2026-12-24","2026-12-30"]
+ off:[]};
+// Firebase 설정값(콘솔에서 복사). null이면 이 브라우저에만 저장되는 '미리보기 모드'로 동작
+const FB={apiKey:"AIzaSyBqyn-B4YYD1pggjGDuu-Z2cr3wWw9KjFg",authDomain:"sangdang-ent.firebaseapp.com",projectId:"sangdang-ent",storageBucket:"sangdang-ent.firebasestorage.app",messagingSenderId:"374113124138",appId:"1:374113124138:web:5c14892cf8ddc372316853"};
+// ============================
+const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,"0"),W=["일","월","화","수","목","금","토"];
+const ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const mins=t=>{const[a,b]=t.split(":").map(Number);return a*60+b};
+$("#hn").textContent=C.name;$("#hi").textContent=C.intro;
+$("#hx").innerHTML=`📍 ${C.addr}<br>🕘 ${C.hours}<br>📞 <a href="tel:${C.phone}">${C.phone}</a>`;
+let db=null;if(FB){firebase.initializeApp(FB);db=firebase.firestore()}else $("#demo").innerHTML='<div class="demo">미리보기 모드: 예약이 이 브라우저에만 저장됩니다. Firebase를 연결하면 실제 예약이 됩니다.</div>';
+const demo=()=>JSON.parse(localStorage.getItem("demo")||"[]").filter(r=>new Date(r.date+"T"+r.time)>new Date());
+async function taken(d){if(db){const s=await db.collection("slots").where("date","==",d).get();return s.docs.map(x=>x.data().time)}
+ return demo().filter(r=>r.date==d).map(r=>r.time)}
+async function book(r){const exp=new Date(r.date+"T"+r.time+":00"),id=r.date+"_"+r.time;
+ if(db){const b=db.batch();b.set(db.collection("slots").doc(id),{date:r.date,time:r.time,expireAt:exp});
+  b.set(db.collection("reservations").doc(id),{...r,expireAt:exp});await b.commit()}
+ else{const a=demo();if(a.some(x=>x.date==r.date&&x.time==r.time))throw 0;a.push(r);localStorage.setItem("demo",JSON.stringify(a))}}
+let sel={date:null,time:null};
+const closed=new Set([...C.holidays,...C.off]);
+async function buildDates(){if(db){try{(await db.collection("closures").get()).forEach(x=>closed.add(x.id))}catch(e){}}
+ const el=$("#dates"),t=new Date();for(let i=0;i<=C.days;i++){const d=new Date(t.getFullYear(),t.getMonth(),t.getDate()+i);
+ if(!C.open[d.getDay()]||closed.has(ymd(d)))continue;const b=document.createElement("button");b.className="chip";
+ b.innerHTML=`${d.getMonth()+1}/${d.getDate()}<small>${i?W[d.getDay()]:"오늘"}</small>`;b.onclick=()=>{[...el.children].forEach(c=>c.classList.remove("on"));b.classList.add("on");pick(d)};el.appendChild(b)}}
+buildDates();
+async function pick(d){sel={date:ymd(d),time:null};const box=$("#times");box.className="mut";box.textContent="불러오는 중…";
+ let tk=[];try{tk=await taken(sel.date)}catch(e){box.textContent="시간을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.";return}
+ const[o,e]=C.open[d.getDay()],end=mins(e),now=new Date(),g=document.createElement("div");g.className="grid";
+ for(let t=mins(o);t<end;t+=C.step){if(t>=mins(C.lunch[0])&&t<mins(C.lunch[1]))continue;
+  const s=pad(Math.floor(t/60))+":"+pad(t%60),b=document.createElement("button");b.className="chip";b.textContent=s;
+  b.disabled=tk.includes(s)||new Date(sel.date+"T"+s+":00")<=now;
+  b.onclick=()=>{[...g.children].forEach(c=>c.classList.remove("on"));b.classList.add("on");sel.time=s};g.appendChild(b)}
+ box.className="";box.replaceChildren(g)}
+$("#ph").oninput=e=>{let v=e.target.value.replace(/\D/g,"").slice(0,11);
+ e.target.value=v.length>7?v.replace(/(\d{3})(\d{3,4})(\d+)/,"$1-$2-$3"):v.length>3?v.replace(/(\d{3})(\d+)/,"$1-$2"):v};
+$("#go").onclick=async()=>{const n=$("#nm").value.trim(),p=$("#ph").value;
+ if(!sel.date||!sel.time)return alert("날짜와 시간을 선택해 주세요.");
+ if(!n)return alert("이름을 입력해 주세요.");
+ if(p.replace(/\D/g,"").length<10)return alert("연락처를 정확히 입력해 주세요.");
+ if(!$("#ag").checked)return alert("개인정보 수집·이용에 동의해 주세요.");
+ const btn=$("#go");btn.disabled=true;btn.textContent="예약 중…";
+ try{await book({name:n,phone:p,date:sel.date,time:sel.time});
+  const d=new Date(sel.date+"T00:00");
+  $("#app").innerHTML=`<section class="card done"><div style="font-size:40px">✅</div><div class="big">예약이 완료되었어요</div>
+  <div>${n}님<br><b>${d.getMonth()+1}월 ${d.getDate()}일 (${W[d.getDay()]}) ${sel.time}</b></div>
+  <p class="mut">이 화면을 캡처해 두시면 편해요.<br>변경·취소는 ${C.phone} 로 연락해 주세요.</p></section>`;scrollTo(0,0)}
+ catch(e){alert("방금 다른 분이 먼저 예약한 시간이에요. 다른 시간을 선택해 주세요.");btn.disabled=false;btn.textContent="예약하기";pick(new Date(sel.date+"T00:00"))}};
+</script></main></body></html>
