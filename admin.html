@@ -49,8 +49,13 @@ firebase.initializeApp(FB);const auth=firebase.auth(),db=firebase.firestore();
 $("#lg").onclick=async()=>{try{await auth.signInWithEmailAndPassword($("#em").value.trim(),$("#pw").value)}catch(e){const m={"auth/operation-not-allowed":"Firebase에서 이메일/비밀번호 로그인이 켜져 있지 않아요.","auth/invalid-credential":"이메일 또는 비밀번호가 맞지 않거나, 등록되지 않은 계정이에요.","auth/invalid-email":"이메일 형식이 올바르지 않아요.","auth/user-not-found":"등록되지 않은 이메일이에요.","auth/wrong-password":"비밀번호가 맞지 않아요.","auth/too-many-requests":"시도가 너무 많아요. 잠시 후 다시 해 주세요.","auth/network-request-failed":"인터넷 연결을 확인해 주세요.","auth/operation-not-supported-in-this-environment":"파일을 직접 열지 말고 GitHub Pages 주소로 접속해 주세요."};
  alert((m[e.code]||"로그인에 실패했어요.")+"\n(오류: "+(e.code||e.message)+")")}};
 $("#pw").onkeydown=e=>{if(e.key=="Enter")$("#lg").click()};
-$("#out").onclick=()=>auth.signOut();$("#rf").onclick=()=>{loadR();loadC()};
-auth.onAuthStateChanged(u=>{$("#login").hidden=!!u;$("#panel").hidden=!u;if(u){loadR();loadC()}});
+$("#out").onclick=()=>auth.signOut();$("#rf").onclick=()=>{loadR();loadC();cleanup()};
+auth.onAuthStateChanged(u=>{$("#login").hidden=!!u;$("#panel").hidden=!u;if(u){loadR();loadC();cleanup()}});
+async function cleanup(){const now=new Date();
+ try{for(const c of ["reservations","slots","cancels"]){
+  const s=await db.collection(c).where("expireAt","<",now).get();
+  for(let i=0;i<s.docs.length;i+=9){const b=db.batch();s.docs.slice(i,i+9).forEach(x=>b.delete(x.ref));await b.commit()}}}
+ catch(e){console.error("cleanup",e)}}
 async function loadR(){const box=$("#list");box.textContent="불러오는 중…";
  try{const s=await db.collection("reservations").where("expireAt",">",new Date()).orderBy("expireAt").get();
   box.replaceChildren();if(s.empty){box.textContent="예정된 예약이 없어요.";return}
