@@ -59,7 +59,7 @@ async function loadR(){const box=$("#list");box.textContent="불러오는 중…
    row.append(el("b",r.time),el("span",r.name),a,b);box.appendChild(row)})}
  catch(e){box.textContent="불러오지 못했어요. 관리자 계정과 Firestore 규칙을 확인해 주세요."}}
 async function cancel(id,r){if(!confirm(`${r.date} ${r.time} ${r.name}님 예약을 취소할까요?`))return;
- try{const b=db.batch();b.delete(db.collection("reservations").doc(id));b.delete(db.collection("slots").doc(id));await b.commit()}catch(e){alert("취소하지 못했어요.")}loadR()}
+ try{const b=db.batch();b.delete(db.collection("reservations").doc(id));b.delete(db.collection("slots").doc(r.date+"_"+r.time));await b.commit()}catch(e){alert("취소하지 못했어요.")}loadR()}
 async function loadC(){const box=$("#cl");box.replaceChildren();
  try{const s=await db.collection("closures").get();
   s.docs.filter(x=>x.id>=today()).sort((a,b)=>a.id<b.id?-1:1).forEach(x=>{
