@@ -45,7 +45,8 @@ const el=(t,x)=>{const e=document.createElement(t);if(x!=null)e.textContent=x;re
 if(!FB){$("#login").textContent="이 파일 상단의 const FB=null; 자리에 Firebase 설정값을 붙여넣어 주세요."}
 else{
 firebase.initializeApp(FB);const auth=firebase.auth(),db=firebase.firestore();
-$("#lg").onclick=async()=>{try{await auth.signInWithEmailAndPassword($("#em").value.trim(),$("#pw").value)}catch(e){alert("로그인에 실패했어요. 이메일과 비밀번호를 확인해 주세요.")}};
+$("#lg").onclick=async()=>{try{await auth.signInWithEmailAndPassword($("#em").value.trim(),$("#pw").value)}catch(e){const m={"auth/operation-not-allowed":"Firebase에서 이메일/비밀번호 로그인이 켜져 있지 않아요.","auth/invalid-credential":"이메일 또는 비밀번호가 맞지 않거나, 등록되지 않은 계정이에요.","auth/invalid-email":"이메일 형식이 올바르지 않아요.","auth/user-not-found":"등록되지 않은 이메일이에요.","auth/wrong-password":"비밀번호가 맞지 않아요.","auth/too-many-requests":"시도가 너무 많아요. 잠시 후 다시 해 주세요.","auth/network-request-failed":"인터넷 연결을 확인해 주세요.","auth/operation-not-supported-in-this-environment":"파일을 직접 열지 말고 GitHub Pages 주소로 접속해 주세요."};
+ alert((m[e.code]||"로그인에 실패했어요.")+"\n(오류: "+(e.code||e.message)+")")}};
 $("#pw").onkeydown=e=>{if(e.key=="Enter")$("#lg").click()};
 $("#out").onclick=()=>auth.signOut();$("#rf").onclick=()=>{loadR();loadC()};
 auth.onAuthStateChanged(u=>{$("#login").hidden=!!u;$("#panel").hidden=!u;if(u){loadR();loadC()}});
