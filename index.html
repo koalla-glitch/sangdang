@@ -2,6 +2,9 @@
 <html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>상당이비인후과 진료 예약</title>
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#1c7ed6">
+<link rel="apple-touch-icon" href="icon-180.png"><meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="상당이비인후과">
 <style>
 :root{--bg:#f4f8fb;--card:#fff;--tx:#1d2b36;--mut:#66788a;--pr:#1c7ed6;--ln:#d9e3ec;--dis:#eef2f5}
 @media(prefers-color-scheme:dark){:root{--bg:#10171d;--card:#18222b;--tx:#e8eef3;--mut:#9aabb8;--pr:#4dabf7;--ln:#2a3945;--dis:#1f2b35}}
@@ -36,6 +39,8 @@ input[type=text],input[type=tel]{width:100%;padding:12px;border:1px solid var(--
 <label class="agree"><input id="ag" type="checkbox"><span>예약 확인·변경 연락 목적으로 이름과 연락처를 수집하며, 예약 시간이 지나면 삭제됩니다. 이에 동의합니다.</span></label>
 <button class="btn" id="go">예약하기</button></section>
 </div>
+<section class="card mut" id="inst"><b>📲 앱처럼 쓰기</b><br>브라우저 메뉴에서 "홈 화면에 추가"를 누르면 바탕화면에 아이콘이 생겨요. (아이폰: Safari 공유 버튼 → 홈 화면에 추가)
+<button class="btn" id="ib" hidden>홈 화면에 추가</button></section>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
@@ -94,4 +99,8 @@ $("#go").onclick=async()=>{const n=$("#nm").value.trim(),p=$("#ph").value;
   <div>${n}님<br><b>${d.getMonth()+1}월 ${d.getDate()}일 (${W[d.getDay()]}) ${sel.time}</b></div>
   <p class="mut">이 화면을 캡처해 두시면 편해요.<br>변경·취소는 ${C.phone} 로 연락해 주세요.</p></section>`;scrollTo(0,0)}
  catch(e){alert("방금 다른 분이 먼저 예약한 시간이에요. 다른 시간을 선택해 주세요.");btn.disabled=false;btn.textContent="예약하기";pick(new Date(sel.date+"T00:00"))}};
+let ip;addEventListener("beforeinstallprompt",e=>{e.preventDefault();ip=e;$("#ib").hidden=false});
+$("#ib").onclick=async()=>{ip.prompt();await ip.userChoice;$("#ib").hidden=true};
+if(matchMedia("(display-mode:standalone)").matches)$("#inst").hidden=true;
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script></main></body></html>
