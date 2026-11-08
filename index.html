@@ -77,8 +77,9 @@ async function book(r){const exp=new Date(r.date+"T"+r.time+":00"),id=r.date+"_"
  else{const a=demo();if(a.some(x=>x.date==r.date&&x.time==r.time))throw 0;a.push(r);localStorage.setItem("demo",JSON.stringify(a))}}
 async function myRes(pid){if(db){const x=await db.collection("reservations").doc(pid).get();const r=x.exists?x.data():null;return r&&r.expireAt.toDate()>new Date()?r:null}
  return demo().find(x=>x.pid==pid)||null}
-async function cancelRes(r){if(db){const b=db.batch();b.set(db.collection("cancels").doc(r.slot),{phone:r.pid});
-  b.delete(db.collection("reservations").doc(r.pid));b.delete(db.collection("slots").doc(r.slot));await b.commit()}
+async function cancelRes(r){if(db){const b=db.batch();b.set(db.collection("cancels").doc(r.slot),{phone:r.pid,expireAt:new Date(Date.now()+864e5)});
+  b.delete(db.collection("reservations").doc(r.pid));b.delete(db.collection("slots").doc(r.slot));await b.commit();
+  try{await db.collection("cancels").doc(r.slot).delete()}catch(_){}}
  else localStorage.setItem("demo",JSON.stringify(demo().filter(x=>x.pid!=r.pid)))}
 let sel={date:null,time:null};
 const closed=new Set([...C.holidays,...C.off]);
