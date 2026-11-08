@@ -107,7 +107,7 @@ $("#go").onclick=async()=>{if(BROKEN)return alert("예약 시스템을 불러오
   if(await myRes(pid)){btn.disabled=false;btn.textContent="예약하기";return alert("이 전화번호로 이미 예약이 있어요. 시간을 바꾸시려면 아래 '예약 취소'에서 먼저 취소한 뒤 다시 예약해 주세요.")}
   step="저장";await book({name:n,phone:p,pid,date:sel.date,time:sel.time});
   const d=new Date(sel.date+"T00:00");
-  const msg=`[${C.name}] ${n}님 ${d.getMonth()+1}월 ${d.getDate()}일(${W[d.getDay()]}) ${sel.time} 예약이 완료되었습니다.\n주소: ${C.addr}\n전화: ${C.phone}\n취소: ${location.origin+location.pathname} 에서 전화번호로 취소할 수 있어요.`,sms="sms:"+pid+"?&body="+encodeURIComponent(msg);
+  const msg=`[${C.name}] ${n}님 ${d.getMonth()+1}월 ${d.getDate()}일(${W[d.getDay()]}) ${sel.time} 예약이 완료되었습니다.\n전화: ${C.phone}\n취소: 예약앱에서 전화번호로 취소할 수 있어요.`,sms="sms:"+pid+"?&body="+encodeURIComponent(msg);
   $("#app").innerHTML=`<section class="card done"><div style="font-size:40px">✅</div><div class="big">예약이 완료되었어요</div>
   <div>${n}님<br><b>${d.getMonth()+1}월 ${d.getDate()}일 (${W[d.getDay()]}) ${sel.time}</b></div>
   <p class="mut">예약을 취소하시려면 화면 아래 "예약 취소"에 전화번호를 입력해 주세요.<br>시간을 바꾸시려면 먼저 취소한 뒤 다시 예약해 주세요.</p><a class="btn" style="display:block;text-align:center;text-decoration:none" href="${sms}">💬 내 휴대폰에 예약 문자 남기기</a></section>`;scrollTo(0,0)}
