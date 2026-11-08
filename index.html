@@ -102,13 +102,16 @@ $("#go").onclick=async()=>{const n=$("#nm").value.trim(),p=$("#ph").value;
  if(!$("#ag").checked)return alert("개인정보 수집·이용에 동의해 주세요.");
  const btn=$("#go");btn.disabled=true;btn.textContent="예약 중…";
  try{const pid=p.replace(/\D/g,"");
-  if(await myRes(pid)){btn.disabled=false;btn.textContent="예약하기";return alert("이 전화번호로 이미 예약이 있어요. 아래 '예약 취소'에서 먼저 취소해 주세요.")}
+  if(await myRes(pid)){btn.disabled=false;btn.textContent="예약하기";return alert("이 전화번호로 이미 예약이 있어요. 시간을 바꾸시려면 아래 '예약 취소'에서 먼저 취소한 뒤 다시 예약해 주세요.")}
   await book({name:n,phone:p,pid,date:sel.date,time:sel.time});
   const d=new Date(sel.date+"T00:00");
   $("#app").innerHTML=`<section class="card done"><div style="font-size:40px">✅</div><div class="big">예약이 완료되었어요</div>
   <div>${n}님<br><b>${d.getMonth()+1}월 ${d.getDate()}일 (${W[d.getDay()]}) ${sel.time}</b></div>
-  <p class="mut">예약을 취소하시려면 화면 아래 "예약 취소"에 전화번호를 입력해 주세요.<br>시간 변경은 ${C.phone} 로 연락해 주세요.</p></section>`;scrollTo(0,0)}
- catch(e){alert("방금 다른 분이 먼저 예약한 시간이에요. 다른 시간을 선택해 주세요.");btn.disabled=false;btn.textContent="예약하기";pick(new Date(sel.date+"T00:00"))}};
+  <p class="mut">예약을 취소하시려면 화면 아래 "예약 취소"에 전화번호를 입력해 주세요.<br>시간을 바꾸시려면 먼저 취소한 뒤 다시 예약해 주세요.</p></section>`;scrollTo(0,0)}
+ catch(e){console.error(e);btn.disabled=false;btn.textContent="예약하기";
+  let free=false;try{free=!(await taken(sel.date)).includes(sel.time)}catch(_){}
+  alert(free?"예약을 저장하지 못했어요. 잠시 후 다시 시도하시거나 "+C.phone+" 로 전화해 주세요.\n(오류: "+(e.code||e.message||e)+")":"방금 다른 분이 먼저 예약한 시간이에요. 다른 시간을 선택해 주세요.");
+  pick(new Date(sel.date+"T00:00"))}};
 let ip;addEventListener("beforeinstallprompt",e=>{e.preventDefault();ip=e;$("#ib").hidden=false});
 $("#ib").onclick=async()=>{ip.prompt();await ip.userChoice;$("#ib").hidden=true};
 if(matchMedia("(display-mode:standalone)").matches)$("#inst").hidden=true;
