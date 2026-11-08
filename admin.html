@@ -3,6 +3,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
 <title>예약 관리</title>
+<link rel="manifest" href="manifest-admin.json"><meta name="theme-color" content="#0b7285">
+<link rel="apple-touch-icon" href="admin-icon-180.png"><meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="예약관리">
 <style>
 :root{--bg:#f4f8fb;--card:#fff;--tx:#1d2b36;--mut:#66788a;--pr:#1c7ed6;--ln:#d9e3ec;--red:#e03131}
 @media(prefers-color-scheme:dark){:root{--bg:#10171d;--card:#18222b;--tx:#e8eef3;--mut:#9aabb8;--pr:#4dabf7;--ln:#2a3945;--red:#ff8787}}
@@ -28,6 +31,8 @@ button.s{background:transparent;color:var(--red);border:1px solid var(--ln);padd
 <section class="card"><h2>휴진일 지정</h2><p class="mut">지정한 날짜는 예약 화면 달력에서 사라져요.</p>
 <div class="top"><input type="date" id="cd"><input id="cm" placeholder="메모 (예: 휴가)"><button id="ca">추가</button></div><div id="cl"></div></section>
 </div>
+<section class="card mut" id="inst"><b>📲 관리자 앱으로 설치</b><br>브라우저 메뉴의 "홈 화면에 추가"를 누르면 바탕화면에 아이콘이 생겨요. (아이폰: Safari 공유 버튼 → 홈 화면에 추가)
+<button id="ib" hidden>홈 화면에 추가</button></section>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -67,4 +72,8 @@ $("#ca").onclick=async()=>{const d=$("#cd").value;if(!d)return alert("날짜를 
   if(n)alert(`이 날짜에 이미 예약이 ${n}건 있어요. 예약 목록에서 확인해 연락해 주세요.`)}
  catch(e){alert("저장하지 못했어요.")}loadC();loadR()};
 }
+let ip;addEventListener("beforeinstallprompt",e=>{e.preventDefault();ip=e;$("#ib").hidden=false});
+$("#ib").onclick=async()=>{ip.prompt();await ip.userChoice;$("#ib").hidden=true};
+if(matchMedia("(display-mode:standalone)").matches)$("#inst").hidden=true;
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script></main></body></html>

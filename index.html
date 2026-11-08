@@ -39,6 +39,9 @@ input[type=text],input[type=tel]{width:100%;padding:12px;border:1px solid var(--
 <label class="agree"><input id="ag" type="checkbox"><span>예약 확인·변경 연락 목적으로 이름과 연락처를 수집하며, 예약 시간이 지나면 삭제됩니다. 이에 동의합니다.</span></label>
 <button class="btn" id="go">예약하기</button></section>
 </div>
+<section class="card"><h2>예약 취소</h2><p class="mut">예약 완료 시 받은 취소 코드를 입력해 주세요.</p>
+<input id="cc" type="text" placeholder="예: 20261201-0930-k3j9x2m8qp" autocomplete="off">
+<button class="btn" id="cb" style="background:#868e96">예약 취소하기</button></section>
 <section class="card mut" id="inst"><b>📲 앱처럼 쓰기</b><br>브라우저 메뉴에서 "홈 화면에 추가"를 누르면 바탕화면에 아이콘이 생겨요. (아이폰: Safari 공유 버튼 → 홈 화면에 추가)
 <button class="btn" id="ib" hidden>홈 화면에 추가</button></section>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -70,6 +73,11 @@ async function book(r){const exp=new Date(r.date+"T"+r.time+":00"),id=r.date+"_"
  if(db){const b=db.batch();b.set(db.collection("slots").doc(id),{date:r.date,time:r.time,expireAt:exp});
   b.set(db.collection("reservations").doc(id),{...r,expireAt:exp});await b.commit()}
  else{const a=demo();if(a.some(x=>x.date==r.date&&x.time==r.time))throw 0;a.push(r);localStorage.setItem("demo",JSON.stringify(a))}}
+async function cancelRes(code){const m=/^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})-([a-z0-9]{10})$/.exec(code.trim().toLowerCase());if(!m)throw 1;
+ const id=`${m[1]}-${m[2]}-${m[3]}_${m[4]}:${m[5]}`,pw=m[6];
+ if(db){const b=db.batch();b.set(db.collection("cancels").doc(id),{code:pw});
+  b.delete(db.collection("reservations").doc(id));b.delete(db.collection("slots").doc(id));await b.commit()}
+ else{const a=demo(),i=a.findIndex(x=>x.date+"_"+x.time==id&&x.pw==pw);if(i<0)throw 1;a.splice(i,1);localStorage.setItem("demo",JSON.stringify(a))}}
 let sel={date:null,time:null};
 const closed=new Set([...C.holidays,...C.off]);
 async function buildDates(){if(db){try{(await db.collection("closures").get()).forEach(x=>closed.add(x.id))}catch(e){}}
@@ -93,14 +101,21 @@ $("#go").onclick=async()=>{const n=$("#nm").value.trim(),p=$("#ph").value;
  if(p.replace(/\D/g,"").length<10)return alert("연락처를 정확히 입력해 주세요.");
  if(!$("#ag").checked)return alert("개인정보 수집·이용에 동의해 주세요.");
  const btn=$("#go");btn.disabled=true;btn.textContent="예약 중…";
- try{await book({name:n,phone:p,date:sel.date,time:sel.time});
+ try{const pw=Array.from(crypto.getRandomValues(new Uint8Array(10)),x=>"abcdefghijklmnopqrstuvwxyz0123456789"[x%36]).join("");
+  await book({name:n,phone:p,date:sel.date,time:sel.time,pw});
+  const code=sel.date.replace(/-/g,"")+"-"+sel.time.replace(":","")+"-"+pw;localStorage.setItem("mycode",code);
   const d=new Date(sel.date+"T00:00");
   $("#app").innerHTML=`<section class="card done"><div style="font-size:40px">✅</div><div class="big">예약이 완료되었어요</div>
   <div>${n}님<br><b>${d.getMonth()+1}월 ${d.getDate()}일 (${W[d.getDay()]}) ${sel.time}</b></div>
-  <p class="mut">이 화면을 캡처해 두시면 편해요.<br>변경·취소는 ${C.phone} 로 연락해 주세요.</p></section>`;scrollTo(0,0)}
+  <p class="mut">취소 코드<br><b style="font-size:18px;color:var(--tx);user-select:all">${code}</b><br>예약을 취소하려면 이 코드가 필요해요. 꼭 캡처해 두세요.<br>시간 변경은 ${C.phone} 로 연락해 주세요.</p></section>`;scrollTo(0,0)}
  catch(e){alert("방금 다른 분이 먼저 예약한 시간이에요. 다른 시간을 선택해 주세요.");btn.disabled=false;btn.textContent="예약하기";pick(new Date(sel.date+"T00:00"))}};
 let ip;addEventListener("beforeinstallprompt",e=>{e.preventDefault();ip=e;$("#ib").hidden=false});
 $("#ib").onclick=async()=>{ip.prompt();await ip.userChoice;$("#ib").hidden=true};
 if(matchMedia("(display-mode:standalone)").matches)$("#inst").hidden=true;
 if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+$("#cc").value=localStorage.getItem("mycode")||"";
+$("#cb").onclick=async()=>{const c=$("#cc").value;if(!c.trim())return alert("취소 코드를 입력해 주세요.");
+ if(!confirm("이 예약을 취소할까요?"))return;
+ try{await cancelRes(c);localStorage.removeItem("mycode");$("#cc").value="";alert("예약이 취소되었어요.");if(sel.date)pick(new Date(sel.date+"T00:00"))}
+ catch(e){alert("취소하지 못했어요. 코드를 다시 확인하시거나 "+C.phone+" 로 연락해 주세요.")}};
 </script></main></body></html>
